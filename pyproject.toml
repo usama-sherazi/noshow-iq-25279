@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noshow_iq"
+version = "0.1.0"
+description = "NoShowIQ: No-show risk prediction API"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "NoShowIQ" }]
+dependencies = [
+  "pandas",
+  "numpy",
+  "scikit-learn",
+  "joblib",
+  "fastapi",
+  "uvicorn[standard]",
+  "pymongo",
+  "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx", "flake8"]
+
+[tool.setuptools]
+packages = ["noshow_iq"]
+
