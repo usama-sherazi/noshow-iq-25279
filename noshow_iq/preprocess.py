@@ -120,4 +120,3 @@ def preprocess_dataframe(df_raw: pd.DataFrame) -> PreprocessResult:
 def preprocess_csv(path: str) -> PreprocessResult:
     df_raw = load_raw_csv(path)
     return preprocess_dataframe(df_raw)
-

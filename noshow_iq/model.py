@@ -8,4 +8,3 @@ def predict():
 
 def evaluate():
     raise NotImplementedError
-
