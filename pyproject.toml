@@ -24,6 +24,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "flake8"]
 
+[project.scripts]
+noshowiq-train = "noshow_iq.model:main"
+
 [tool.setuptools]
 packages = ["noshow_iq"]
 
