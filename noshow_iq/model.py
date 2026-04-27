@@ -196,6 +196,12 @@ def train(
     # can make it impossible; fall back to non-stratified split.
     class_counts = y.value_counts()
     can_stratify = bool(class_counts.min() >= 2)
+    # StratifiedShuffleSplit also requires at least 1 sample per class in test.
+    n_classes = int(y.nunique())
+    n_samples = int(len(y))
+    n_test = int(round(float(test_size) * n_samples))
+    if n_test < n_classes:
+        can_stratify = False
     stratify = y if can_stratify else None
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -242,8 +248,13 @@ def predict(
     prep = preprocess_dataframe(df_raw)
     df = prep.df_clean
 
-    numeric_features, categorical_features = _pick_feature_columns(df)
-    X = df[numeric_features + categorical_features].copy()
+    # Ensure inference uses the same columns the model was trained on.
+    trained_cols = getattr(model, "feature_names_in_", None)
+    if trained_cols is not None:
+        X = df.reindex(columns=list(trained_cols), fill_value=np.nan)
+    else:
+        numeric_features, categorical_features = _pick_feature_columns(df)
+        X = df[numeric_features + categorical_features].copy()
 
     proba = float(model.predict_proba(X)[0, 1])
     pred = int(proba >= 0.5)
