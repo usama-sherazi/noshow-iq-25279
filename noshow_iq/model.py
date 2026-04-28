@@ -132,7 +132,11 @@ def evaluate(y_true: Iterable[int], y_pred: Iterable[int]) -> EvalMetrics:
 
 
 def _get_mongo_collection(mongo_uri: str, db_name: str = DEFAULT_DB_NAME):
-    client = MongoClient(mongo_uri)
+    tls_insecure = os.getenv("MONGO_TLS_INSECURE", "").strip().lower() in {"1", "true", "yes"}
+    if tls_insecure:
+        client = MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
+    else:
+        client = MongoClient(mongo_uri)
     return client[db_name]["training_runs"]
 
 
