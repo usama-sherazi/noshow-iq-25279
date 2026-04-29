@@ -16,6 +16,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
 
       - uses: actions/setup-python@v5
         with:
@@ -106,6 +109,9 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install
           git fetch --prune --tags origin
           git checkout -f "${GITHUB_SHA}"
           git remote add hf "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}"
