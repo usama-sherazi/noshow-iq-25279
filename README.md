@@ -38,6 +38,9 @@ uvicorn noshow_iq.api:app --reload --port 8000
 Open the dashboard at:
 - `/` (root path)
 
+## MongoDB
+Predictions and training runs are stored in MongoDB Atlas when `MONGO_URI` is configured in the Hugging Face Space secrets.
+
 ## Endpoints
 - `GET /health`
 - `POST /predict`
