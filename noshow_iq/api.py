@@ -2,23 +2,35 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo import MongoClient
-from dotenv import load_dotenv
 
 from noshow_iq.model import DEFAULT_MODEL_PATH, predict as model_predict
 from noshow_iq.preprocess import preprocess_dataframe
 
-load_dotenv()
-
 app = FastAPI(title="NoShowIQ")
 
 DEFAULT_DB_NAME = "noshow_iq"
+
+_DASHBOARD_HTML: str | None = None
+
+
+def _load_dashboard_html() -> str:
+    global _DASHBOARD_HTML
+    if _DASHBOARD_HTML is not None:
+        return _DASHBOARD_HTML
+
+    p = Path(__file__).with_name("dashboard.html")
+    _DASHBOARD_HTML = p.read_text(encoding="utf-8")
+    return _DASHBOARD_HTML
+
 
 def _mongo_client(mongo_uri: str) -> MongoClient:
     tls_insecure = os.getenv("MONGO_TLS_INSECURE", "").strip().lower() in {"1", "true", "yes"}
@@ -209,6 +221,11 @@ def get_store() -> PredictionStore:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/", response_class=HTMLResponse)
+def dashboard():
+    return HTMLResponse(content=_load_dashboard_html())
 
 
 @app.post("/predict", response_model=PredictOut)

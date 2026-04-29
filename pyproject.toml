@@ -30,3 +30,6 @@ noshowiq-train = "noshow_iq.model:main"
 [tool.setuptools]
 packages = ["noshow_iq"]
 
+[tool.setuptools.package-data]
+noshow_iq = ["*.html"]
+

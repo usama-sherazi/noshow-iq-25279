@@ -24,6 +24,7 @@ services:
     depends_on:
       - mongodb
     environment:
+      PORT: 8000
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB_NAME: noshow_iq
       MODEL_PATH: artifacts/model.joblib

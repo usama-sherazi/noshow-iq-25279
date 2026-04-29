@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NoShowIQ</title>
+  </head>
+  <body>
+    <!-- This HTML is adapted from noshow_iq_dashboard.html and wired to the real API. -->
+
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial); }
+      .app { padding: 1.5rem 0; max-width: 1060px; margin: 0 auto; }
+      .header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding: 0 12px; }
+      .logo { width: 40px; height: 40px; border-radius: 10px; background: #1D9E75; display: flex; align-items: center; justify-content: center; }
+      .logo svg { width: 22px; height: 22px; fill: white; }
+      .brand h1 { font-size: 20px; font-weight: 600; color: var(--color-text-primary, #0b0f13); }
+      .brand p { font-size: 12px; color: var(--color-text-secondary, #4c5a67); }
+      .badge-live { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; background: #EAF3DE; color: #3B6D11; padding: 3px 9px; border-radius: 20px; margin-left: auto; }
+      .dot { width: 6px; height: 6px; border-radius: 50%; background: #639922; animation: pulse 1.5s infinite; }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; padding: 0 12px; }
+      .stat { background: var(--color-background-secondary, #f6f8fa); border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(0,0,0,0.06); }
+      .stat-label { font-size: 11px; color: var(--color-text-secondary, #4c5a67); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+      .stat-value { font-size: 22px; font-weight: 600; color: var(--color-text-primary, #0b0f13); }
+      .stat-value.danger { color: #A32D2D; }
+      .stat-value.success { color: #0F6E56; }
+      .stat-value.warning { color: #854F0B; }
+      .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; padding: 0 12px; }
+      .card { background: var(--color-background-primary, #fff); border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 1rem 1.25rem; }
+      .card-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary, #4c5a67); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+      .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+      .form-row label { font-size: 12px; color: var(--color-text-secondary, #4c5a67); }
+      .form-row input, .form-row select { font-size: 13px; padding: 7px 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 10px; background: #f6f8fa; color: #0b0f13; width: 100%; }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .predict-btn { width: 100%; padding: 9px; font-size: 13px; font-weight: 600; border-radius: 10px; border: none; background: #1D9E75; color: white; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+      .predict-btn:hover { background: #0F6E56; }
+      .predict-btn:disabled { background: #89c9b7; cursor: not-allowed; }
+      .result-box { margin-top: 14px; border-radius: 10px; padding: 14px; display: none; }
+      .result-box.high { background: #FCEBEB; border: 1px solid #F09595; }
+      .result-box.low { background: #E1F5EE; border: 1px solid #5DCAA5; }
+      .result-box.medium { background: #FAEEDA; border: 1px solid #FAC775; }
+      .result-risk { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+      .result-risk.high { color: #A32D2D; }
+      .result-risk.low { color: #0F6E56; }
+      .result-risk.medium { color: #854F0B; }
+      .result-prob { font-size: 12px; color: var(--color-text-secondary, #4c5a67); margin-bottom: 6px; }
+      .result-rec { font-size: 12px; color: var(--color-text-primary, #0b0f13); border-top: 1px solid rgba(0,0,0,0.08); padding-top: 8px; margin-top: 4px; }
+      .history-list { display: flex; flex-direction: column; gap: 8px; }
+      .history-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: #f6f8fa; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06); }
+      .history-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .history-avatar.high { background: #F7C1C1; color: #791F1F; }
+      .history-avatar.low { background: #9FE1CB; color: #085041; }
+      .history-avatar.medium { background: #FAC775; color: #633806; }
+      .history-info { flex: 1; }
+      .history-name { font-size: 13px; font-weight: 700; color: #0b0f13; }
+      .history-time { font-size: 11px; color: #4c5a67; }
+      .history-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+      .history-badge.high { background: #F7C1C1; color: #791F1F; }
+      .history-badge.low { background: #9FE1CB; color: #085041; }
+      .history-badge.medium { background: #FAC775; color: #633806; }
+      .endpoints-card { background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 1rem 1.25rem; margin: 0 12px 16px; }
+      .endpoint-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+      .endpoint-row:last-child { border-bottom: none; }
+      .method { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; min-width: 42px; text-align: center; }
+      .method.get { background: #E6F1FB; color: #185FA5; }
+      .method.post { background: #EAF3DE; color: #3B6D11; }
+      .endpoint-path { font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; color: #0b0f13; }
+      .endpoint-desc { font-size: 11px; color: #4c5a67; margin-left: auto; }
+      .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+      .bar-row { display: flex; align-items: center; gap: 10px; }
+      .bar-label { font-size: 12px; color: #4c5a67; width: 70px; text-align: right; flex-shrink: 0; }
+      .bar-track { flex: 1; height: 10px; background: #f6f8fa; border-radius: 5px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+      .bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+      .bar-fill.show { background: #1D9E75; }
+      .bar-fill.noshow { background: #E24B4A; }
+      .bar-count { font-size: 12px; color: #4c5a67; width: 35px; }
+      .error-banner { display:none; margin: 0 12px 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid #F09595; background:#FCEBEB; color:#791F1F; font-size: 12px; }
+    </style>
+
+    <div class="app">
+      <div class="header">
+        <div class="logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+        </div>
+        <div class="brand">
+          <h1>NoShowIQ</h1>
+          <p>Appointment no-show prediction API</p>
+        </div>
+        <span class="badge-live"><span class="dot"></span> Live</span>
+      </div>
+
+      <div class="error-banner" id="err"></div>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-label">Total predictions</div>
+          <div class="stat-value" id="s-total">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">High risk</div>
+          <div class="stat-value danger" id="s-high">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Low risk</div>
+          <div class="stat-value success" id="s-low">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg probability</div>
+          <div class="stat-value warning" id="s-avg">0%</div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="card">
+          <div class="card-title">POST /predict — try it</div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label>Patient age</label>
+              <input type="number" id="age" value="34" min="0" max="115" />
+            </div>
+            <div class="form-row">
+              <label>Gender</label>
+              <select id="gender"><option>Female</option><option>Male</option></select>
+            </div>
+            <div class="form-row">
+              <label>Scheduled date</label>
+              <input type="date" id="sched" />
+            </div>
+            <div class="form-row">
+              <label>Appointment date</label>
+              <input type="date" id="appt" />
+            </div>
+            <div class="form-row">
+              <label>Neighbourhood</label>
+              <select id="neigh">
+                <option>JARDIM CAMBURI</option>
+                <option>MARIA ORTIZ</option>
+                <option>RESISTÊNCIA</option>
+                <option>JESUS DE NAZARETH</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>SMS received</label>
+              <select id="sms"><option>Yes</option><option>No</option></select>
+            </div>
+            <div class="form-row">
+              <label>Scholarship</label>
+              <select id="scholar"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="form-row">
+              <label>Hypertension</label>
+              <select id="hyper"><option>No</option><option>Yes</option></select>
+            </div>
+          </div>
+          <button class="predict-btn" id="predict-btn" onclick="runPredict()">Run prediction ↗</button>
+          <div class="result-box" id="result-box">
+            <div class="result-risk" id="result-risk"></div>
+            <div class="result-prob" id="result-prob"></div>
+            <div class="result-rec" id="result-rec"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <div class="card-title">GET /history — last predictions</div>
+            <div class="history-list" id="history-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Class imbalance (dataset)</div>
+            <div class="bar-chart">
+              <div class="bar-row">
+                <div class="bar-label">Showed up</div>
+                <div class="bar-track"><div class="bar-fill show" id="bar-show" style="width:0%"></div></div>
+                <div class="bar-count" id="bar-show-n">80%</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label">No-show</div>
+                <div class="bar-track"><div class="bar-fill noshow" id="bar-noshow" style="width:0%"></div></div>
+                <div class="bar-count" id="bar-noshow-n">20%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoints-card">
+        <div class="card-title" style="margin-bottom:0.75rem;">API endpoints</div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="endpoint-desc">Service health check</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/predict</span>
+          <span class="endpoint-desc">Single appointment risk score</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/history</span>
+          <span class="endpoint-desc">Last 20 predictions from MongoDB</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/stats</span>
+          <span class="endpoint-desc">Aggregated MongoDB pipeline stats</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const err = document.getElementById('err');
+      function showErr(msg) {
+        err.style.display = 'block';
+        err.textContent = msg;
+      }
+      function clearErr() {
+        err.style.display = 'none';
+        err.textContent = '';
+      }
+      function fmtPct(x) {
+        if (x === null || x === undefined || Number.isNaN(x)) return '0%';
+        return `${Math.round(Number(x) * 100)}%`;
+      }
+      function initialsFromRisk(risk) {
+        if (risk === 'high') return 'HR';
+        if (risk === 'medium') return 'MR';
+        return 'LR';
+      }
+      function timeAgo(iso) {
+        try {
+          const t = new Date(iso).getTime();
+          const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+          if (s < 60) return `${s}s ago`;
+          const m = Math.floor(s / 60);
+          if (m < 60) return `${m}m ago`;
+          const h = Math.floor(m / 60);
+          return `${h}h ago`;
+        } catch (e) {
+          return '';
+        }
+      }
+
+      async function loadStats() {
+        const r = await fetch('/stats');
+        if (!r.ok) throw new Error(`GET /stats failed (${r.status})`);
+        const s = await r.json();
+        document.getElementById('s-total').textContent = s.total_predictions ?? 0;
+        document.getElementById('s-high').textContent = s.high_risk_count ?? 0;
+        document.getElementById('s-low').textContent = s.low_risk_count ?? 0;
+        document.getElementById('s-avg').textContent = fmtPct(s.average_probability ?? 0);
+      }
+
+      async function loadHistory() {
+        const r = await fetch('/history');
+        if (!r.ok) throw new Error(`GET /history failed (${r.status})`);
+        const body = await r.json();
+        const items = body.items || [];
+        const hl = document.getElementById('history-list');
+        hl.innerHTML = '';
+        if (!items.length) {
+          hl.innerHTML = '<div style="font-size:12px;color:#4c5a67;">No predictions yet. Run /predict once.</div>';
+          return;
+        }
+        items.slice(0, 8).forEach(p => {
+          const risk = (p.risk || 'low').toLowerCase();
+          const prob = fmtPct(p.probability || 0);
+          const when = timeAgo(p.timestamp);
+          hl.innerHTML += `<div class="history-item">
+            <div class="history-avatar ${risk}">${initialsFromRisk(risk)}</div>
+            <div class="history-info">
+              <div class="history-name">${prob} probability</div>
+              <div class="history-time">${when}</div>
+            </div>
+            <div class="history-badge ${risk}">${risk}</div>
+          </div>`;
+        });
+      }
+
+      async function runPredict() {
+        clearErr();
+        const btn = document.getElementById('predict-btn');
+        btn.disabled = true;
+
+        try {
+          const age = parseInt(document.getElementById('age').value) || 34;
+          const sched = document.getElementById('sched').value;
+          const appt = document.getElementById('appt').value;
+          const sms = document.getElementById('sms').value === 'Yes' ? 1 : 0;
+          const scholar = document.getElementById('scholar').value === 'Yes' ? 1 : 0;
+          const hyper = document.getElementById('hyper').value === 'Yes' ? 1 : 0;
+          const gender = document.getElementById('gender').value === 'Female' ? 'F' : 'M';
+          const neigh = document.getElementById('neigh').value;
+
+          if (!sched || !appt) {
+            throw new Error('Please select both Scheduled date and Appointment date.');
+          }
+
+          const payload = {
+            ScheduledDay: new Date(`${sched}T10:00:00Z`).toISOString(),
+            AppointmentDay: new Date(`${appt}T00:00:00Z`).toISOString(),
+            Age: age,
+            Gender: gender,
+            Neighbourhood: neigh,
+            SMS_received: sms,
+            Scholarship: scholar,
+            Hipertension: hyper
+          };
+
+          const r = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const box = document.getElementById('result-box');
+          if (!r.ok) {
+            const t = await r.text();
+            throw new Error(`POST /predict failed (${r.status}): ${t}`);
+          }
+
+          const out = await r.json();
+          const risk = (out.risk || 'low').toLowerCase();
+          const prob = fmtPct(out.probability || 0);
+
+          box.className = 'result-box ' + risk;
+          box.style.display = 'block';
+          document.getElementById('result-risk').className = 'result-risk ' + risk;
+          document.getElementById('result-risk').textContent =
+            (risk === 'high' ? 'High no-show risk' : risk === 'medium' ? 'Medium risk' : 'Low risk');
+          document.getElementById('result-prob').textContent = `No-show probability: ${prob}`;
+          document.getElementById('result-rec').textContent = out.recommendation || '';
+
+          await loadStats();
+          await loadHistory();
+        } catch (e) {
+          showErr(e.message || String(e));
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      (function init() {
+        const today = new Date();
+        const d1 = new Date(today.getTime() + 2 * 86400000);
+        const d2 = new Date(today.getTime() + 6 * 86400000);
+        document.getElementById('sched').value = d1.toISOString().slice(0, 10);
+        document.getElementById('appt').value = d2.toISOString().slice(0, 10);
+        setTimeout(() => {
+          document.getElementById('bar-show').style.width = '80%';
+          document.getElementById('bar-noshow').style.width = '20%';
+        }, 300);
+        loadStats().catch(e => showErr(e.message || String(e)));
+        loadHistory().catch(e => showErr(e.message || String(e)));
+      })();
+    </script>
+  </body>
+</html>
