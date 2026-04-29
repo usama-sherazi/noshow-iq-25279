@@ -105,6 +105,34 @@ jobs:
           print("SPACE_OK", space_id)
           PY
 
+      - name: Set Hugging Face Space secrets (Mongo)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          ENABLE_MONGO: ${{ secrets.ENABLE_MONGO }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+          MONGO_TLS_INSECURE: ${{ secrets.MONGO_TLS_INSECURE }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          
+          space_id = os.environ["HF_SPACE_ID"]
+          token = os.environ["HF_TOKEN"]
+          api = HfApi(token=token)
+          
+          def _set_if_present(key: str) -> None:
+              val = (os.environ.get(key) or "").strip()
+              if not val:
+                  print(f"SKIP: {key} not set in GitHub")
+                  return
+              api.add_space_secret(repo_id=space_id, key=key, value=val)
+              print("SECRET_SET", key)
+          
+          for k in ["ENABLE_MONGO", "MONGO_URI", "MONGO_DB_NAME", "MONGO_TLS_INSECURE"]:
+              _set_if_present(k)
+          PY
+
       - name: Deploy to Hugging Face Space (git push)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
