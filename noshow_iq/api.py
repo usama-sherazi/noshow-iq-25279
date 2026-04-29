@@ -239,8 +239,9 @@ _MEM_STORE = InMemoryPredictionStore()
 
 
 def get_store() -> PredictionStore:
+    enable_mongo = os.getenv("ENABLE_MONGO", "").strip().lower() in {"1", "true", "yes"}
     mongo_uri = os.getenv("MONGO_URI")
-    if mongo_uri:
+    if enable_mongo and mongo_uri:
         db_name = os.getenv("MONGO_DB_NAME", DEFAULT_DB_NAME)
         return MongoPredictionStore(mongo_uri, db_name=db_name)
     return _MEM_STORE
