@@ -26,5 +26,6 @@ Thumbs.db
 
 # Model artifacts
 *.pkl
-artifacts/
+artifacts/*
+!artifacts/model.joblib
 
