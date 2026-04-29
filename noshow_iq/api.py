@@ -248,8 +248,11 @@ def get_store() -> PredictionStore:
 
 
 @app.get("/health")
-def health():
+def health(details: bool = False):
     out: Dict[str, Any] = {"status": "ok"}
+    if not details:
+        return out
+
     enable_mongo = os.getenv("ENABLE_MONGO", "").strip().lower() in {"1", "true", "yes"}
     mongo_uri = os.getenv("MONGO_URI")
     if enable_mongo and mongo_uri:
