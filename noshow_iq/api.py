@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo import MongoClient
@@ -248,7 +248,7 @@ def get_store() -> PredictionStore:
 
 
 @app.get("/health")
-def health(details: bool = False):
+def health(details: bool = Query(False)):
     out: Dict[str, Any] = {"status": "ok"}
     if not details:
         return out
