@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 
 from noshow_iq.model import DEFAULT_MODEL_PATH, predict as model_predict
 from noshow_iq.preprocess import preprocess_dataframe
@@ -34,9 +35,15 @@ def _load_dashboard_html() -> str:
 
 def _mongo_client(mongo_uri: str) -> MongoClient:
     tls_insecure = os.getenv("MONGO_TLS_INSECURE", "").strip().lower() in {"1", "true", "yes"}
+    common_kwargs = {
+        # Prevent long hangs when Atlas/network is flaky.
+        "serverSelectionTimeoutMS": 5000,
+        "connectTimeoutMS": 5000,
+        "socketTimeoutMS": 5000,
+    }
     if tls_insecure:
-        return MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
-    return MongoClient(mongo_uri)
+        return MongoClient(mongo_uri, tlsAllowInvalidCertificates=True, **common_kwargs)
+    return MongoClient(mongo_uri, **common_kwargs)
 
 
 def _utc_now_iso() -> str:
@@ -112,14 +119,17 @@ class MongoPredictionStore(PredictionStore):
         self._predictions.insert_one(doc)
 
     def history(self, limit: int = 20) -> List[Dict[str, Any]]:
-        cursor = (
-            self._predictions.find({}, sort=[("timestamp", -1)], limit=int(limit))
-        )
-        items: List[Dict[str, Any]] = []
-        for d in cursor:
-            d["_id"] = str(d.get("_id"))
-            items.append(d)
-        return items
+        try:
+            cursor = (
+                self._predictions.find({}, sort=[("timestamp", -1)], limit=int(limit))
+            )
+            items: List[Dict[str, Any]] = []
+            for d in cursor:
+                d["_id"] = str(d.get("_id"))
+                items.append(d)
+            return items
+        except PyMongoError:
+            return []
 
     def stats(self) -> Dict[str, Any]:
         pipeline = [
@@ -176,8 +186,19 @@ class MongoPredictionStore(PredictionStore):
                 }
             },
         ]
-        out = list(self._predictions.aggregate(pipeline, allowDiskUse=False))
-        if not out:
+        try:
+            out = list(self._predictions.aggregate(pipeline, allowDiskUse=False))
+            if not out:
+                return {
+                    "total_predictions": 0,
+                    "high_risk_count": 0,
+                    "low_risk_count": 0,
+                    "average_probability": 0.0,
+                    "last_trained": None,
+                }
+            return out[0]
+        except PyMongoError:
+            # Return a valid shape instead of 500 if Atlas is temporarily unreachable.
             return {
                 "total_predictions": 0,
                 "high_risk_count": 0,
@@ -185,7 +206,6 @@ class MongoPredictionStore(PredictionStore):
                 "average_probability": 0.0,
                 "last_trained": None,
             }
-        return out[0]
 
 
 class InMemoryPredictionStore(PredictionStore):
