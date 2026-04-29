@@ -9,7 +9,8 @@ app_port: 8000
 NoShowIQ is a prediction API for clinic appointment no-shows.
 
 ## Live
-- Hugging Face Space: (add after deploy)
+- Hugging Face Space: https://huggingface.co/spaces/Usama242/noshow-iq-25279
+- Live app URL: https://usama242-noshow-iq-25279.hf.space
 
 ## CI
 ![ci-cd](https://github.com/usama-sherazi/noshow-iq-25279/actions/workflows/ci-cd.yml/badge.svg)
