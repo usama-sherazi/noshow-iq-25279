@@ -42,7 +42,12 @@ def _mongo_client(mongo_uri: str) -> MongoClient:
         "socketTimeoutMS": 5000,
     }
     if tls_insecure:
-        return MongoClient(mongo_uri, tlsAllowInvalidCertificates=True, **common_kwargs)
+        return MongoClient(
+            mongo_uri,
+            tlsAllowInvalidCertificates=True,
+            tlsAllowInvalidHostnames=True,
+            **common_kwargs,
+        )
     return MongoClient(mongo_uri, **common_kwargs)
 
 
