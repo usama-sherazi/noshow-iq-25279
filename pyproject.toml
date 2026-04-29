@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "noshow_iq"
-version = "0.1.0"
+name = "noshow-iq-25279"
+version = "0.1.1"
 description = "NoShowIQ: No-show risk prediction API"
 readme = "README.md"
 requires-python = ">=3.11"
