@@ -249,7 +249,19 @@ def get_store() -> PredictionStore:
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    out: Dict[str, Any] = {"status": "ok"}
+    enable_mongo = os.getenv("ENABLE_MONGO", "").strip().lower() in {"1", "true", "yes"}
+    mongo_uri = os.getenv("MONGO_URI")
+    if enable_mongo and mongo_uri:
+        try:
+            c = _mongo_client(mongo_uri)
+            c.admin.command("ping")
+            out["mongo"] = {"enabled": True, "ok": True}
+        except Exception as e:
+            out["mongo"] = {"enabled": True, "ok": False, "error": str(e)}
+    else:
+        out["mongo"] = {"enabled": False}
+    return out
 
 
 @app.get("/", response_class=HTMLResponse)
