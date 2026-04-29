@@ -42,6 +42,7 @@ def _mongo_client(mongo_uri: str) -> MongoClient:
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
+
 def _json_safe(value: Any) -> Any:
     if isinstance(value, (datetime,)):
         return value.replace(microsecond=0).isoformat()
