@@ -11,7 +11,7 @@ jobs:
       contents: read
     env:
       IMAGE_NAME: noshow-iq-25279
-      HF_SPACE_ID: usama-sherazi/noshow-iq-25279
+      HF_SPACE_NAME: noshow-iq-25279
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
@@ -50,6 +50,33 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Resolve Hugging Face Space ID
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          
+          token = os.environ["HF_TOKEN"]
+          req = urllib.request.Request(
+              "https://huggingface.co/api/whoami-v2",
+              headers={"Authorization": f"Bearer {token}"},
+          )
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              data = json.loads(resp.read().decode("utf-8"))
+          username = data.get("name") or data.get("user") or data.get("user_name")
+          if not username:
+              raise SystemExit(f"Could not resolve HF username from whoami-v2: {data}")
+          
+          space_id = f"{username}/{os.environ['HF_SPACE_NAME']}"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
+              f.write(f"HF_SPACE_ID={space_id}\n")
+          
+          print("HF_SPACE_ID", space_id)
+          PY
 
       - name: Ensure Hugging Face Space exists
         env:
