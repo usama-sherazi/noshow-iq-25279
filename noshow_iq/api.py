@@ -123,6 +123,7 @@ class MongoPredictionStore(PredictionStore):
             cursor = (
                 self._predictions.find({}, sort=[("timestamp", -1)], limit=int(limit))
             )
+            cursor = cursor.max_time_ms(4000)
             items: List[Dict[str, Any]] = []
             for d in cursor:
                 d["_id"] = str(d.get("_id"))
@@ -187,7 +188,13 @@ class MongoPredictionStore(PredictionStore):
             },
         ]
         try:
-            out = list(self._predictions.aggregate(pipeline, allowDiskUse=False))
+            out = list(
+                self._predictions.aggregate(
+                    pipeline,
+                    allowDiskUse=False,
+                    maxTimeMS=4000,
+                )
+            )
             if not out:
                 return {
                     "total_predictions": 0,
